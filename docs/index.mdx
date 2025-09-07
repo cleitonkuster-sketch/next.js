@@ -1,3 +1,152 @@
+// Projeto Next.js + Tailwind completo pronto para teste com chat, carrinho, Instagram e pagamentos simples
+
+// 1. pages/_app.js
+import '../styles/globals.css'
+export default function App({ Component, pageProps }) {
+  return <Component {...pageProps} />
+}
+
+// 2. components/Navbar.jsx
+import { useState } from 'react';
+import Cart from './Cart';
+export default function Navbar({ cartItems, setCartItems }) {
+  const [cartOpen, setCartOpen] = useState(false);
+
+  return (
+    <header className="bg-white shadow-sm sticky top-0 z-30">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center font-bold">SA</div>
+          <h1 className="text-lg font-semibold">Sonho&ArtMDF</h1>
+        </div>
+        <nav className="hidden md:flex items-center gap-6 text-sm">
+          <a href="#pricing" className="hover:text-blue-600">Valores</a>
+          <a href="#contact" className="hover:text-blue-600">Contato</a>
+          <button onClick={()=>setCartOpen(!cartOpen)} className="relative">Carrinho ({cartItems.length})</button>
+          <a href="https://instagram.com/sonhoartmdf" target="_blank" className="hover:text-pink-500">Instagram</a>
+        </nav>
+      </div>
+      {cartOpen && <Cart cartItems={cartItems} setCartItems={setCartItems} />}
+    </header>
+  )
+}
+
+// 3. components/Pricing.jsx
+import { useEffect, useState } from 'react';
+export default function Pricing({ cartItems, setCartItems }) {
+  const [valores, setValores] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('valores');
+      return saved ? JSON.parse(saved) : [
+        { medida: "5x5 cm", unit: "R$ 1,50", lote: "R$ 1,20" },
+        { medida: "10x10 cm", unit: "R$ 3,00", lote: "R$ 2,50" },
+        { medida: "15x15 cm", unit: "R$ 5,00", lote: "R$ 4,20" },
+        { medida: "20x20 cm", unit: "R$ 8,00", lote: "R$ 7,00" },
+      ];
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('valores', JSON.stringify(valores));
+  }, [valores]);
+
+  const handleEdit = (index, field, value) => {
+    const newValores = [...valores];
+    newValores[index][field] = value;
+    setValores(newValores);
+  };
+
+  const addToCart = (item) => {
+    setCartItems([...cartItems, item]);
+  };
+
+  return (
+    <section id="pricing" className="py-12 bg-gray-50">
+      <div className="max-w-6xl mx-auto px-6">
+        <h2 className="text-2xl font-bold mb-4">Medidas e Valores</h2>
+        <table className="w-full border text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-3 border">Medida</th>
+              <th className="p-3 border">Valor unitário</th>
+              <th className="p-3 border">Valor em lote (10+)</th>
+              <th className="p-3 border">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {valores.map((linha,index)=>(
+              <tr key={index}>
+                <td className="p-3 border"><input className="w-full border p-1" value={linha.medida} onChange={e=>handleEdit(index,'medida',e.target.value)} /></td>
+                <td className="p-3 border"><input className="w-full border p-1" value={linha.unit} onChange={e=>handleEdit(index,'unit',e.target.value)} /></td>
+                <td className="p-3 border"><input className="w-full border p-1" value={linha.lote} onChange={e=>handleEdit(index,'lote',e.target.value)} /></td>
+                <td className="p-3 border"><button className="bg-blue-600 text-white px-3 py-1 rounded" onClick={()=>addToCart(linha)}>Adicionar</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
+// 4. components/Cart.jsx
+export default function Cart({ cartItems, setCartItems }) {
+  const removeItem = (index) => {
+    const newCart = [...cartItems];
+    newCart.splice(index,1);
+    setCartItems(newCart);
+  };
+  return (
+    <div className="fixed right-0 top-16 bg-white border shadow p-4 w-64 z-50">
+      <h3 className="font-bold mb-2">Carrinho</h3>
+      {cartItems.length === 0 ? <p>Vazio</p> : (
+        <ul>
+          {cartItems.map((item,i)=>(
+            <li key={i} className="flex justify-between mb-1">
+              <span>{item.medida} - {item.unit}</span>
+              <button className="text-red-500" onClick={()=>removeItem(i)}>x</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-4">
+        <h4 className="font-semibold">Formas de Pagamento</h4>
+        <div className="flex gap-2 mt-2">
+          <span className="bg-green-500 text-white px-2 py-1 rounded">Pix</span>
+          <span className="bg-blue-700 text-white px-2 py-1 rounded">Cartão</span>
+          <span className="bg-gray-700 text-white px-2 py-1 rounded">Boleto</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 5. components/ChatWhatsApp.jsx
+export default function ChatWhatsApp() {
+  return (
+    <a href="https://wa.me/5500000000000" target="_blank" className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg">Chat WhatsApp</a>
+  )
+}
+
+// 6. pages/index.js
+import { useState } from 'react';
+import Navbar from '../components/Navbar';
+import Pricing from '../components/Pricing';
+import ChatWhatsApp from '../components/ChatWhatsApp';
+export default function Home() {
+  const [cartItems,setCartItems] = useState([]);
+  return (
+    <div>
+      <Navbar cartItems={cartItems} setCartItems={setCartItems} />
+      <main className="max-w-6xl mx-auto px-6 py-12">
+        <h1 className="text-3xl font-bold mb-6">Bem-vindo à Sonho&ArtMDF</h1>
+        <Pricing cartItems={cartItems} setCartItems={setCartItems} />
+      </main>
+      <ChatWhatsApp />
+    </div>
+  )
+}
 ---
 title: Next.js Docs
 description: Welcome to the Next.js Documentation.
